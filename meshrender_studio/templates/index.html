@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MeshRender Studio</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  </head>
+  <body>
+    <main class="page-shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">MeshRender Studio</p>
+          <h1>Prepare, render, and review engineering mesh figures.</h1>
+          <p class="hero-copy">
+            Import AQWA, Abaqus, VTU, or VTK sources, tune shared render settings,
+            adjust camera angles in degrees, and inspect generated PNG outputs
+            without editing JSON by hand.
+          </p>
+        </div>
+        <div class="hero-status">
+          <div class="status-card">
+            <span class="status-label">Project ID</span>
+            <strong id="project-id">Not loaded</strong>
+          </div>
+          <div class="status-card">
+            <span class="status-label">ParaView</span>
+            <strong id="pvpython-status">Checking…</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Project Info</h2>
+          <div class="actions">
+            <button id="new-project-btn" class="secondary">New Project</button>
+            <button id="save-project-btn">Save Project</button>
+          </div>
+        </div>
+        <div class="project-grid">
+          <label>
+            <span>Project name</span>
+            <input id="project-name" type="text" placeholder="Untitled Project" />
+          </label>
+          <label>
+            <span>Saved projects</span>
+            <div class="inline-actions">
+              <select id="saved-projects"></select>
+              <button id="load-project-btn" class="secondary">Load</button>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Sources</h2>
+          <div class="actions">
+            <label class="upload-btn">
+              <input id="file-import" type="file" multiple />
+              Import Files
+            </label>
+            <button id="add-source-btn" class="secondary">Add Source Row</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Kind</th>
+                <th>Input</th>
+                <th>Figure Prefix</th>
+                <th>Views</th>
+                <th>Part Name</th>
+                <th>Part Index</th>
+                <th>Structure Filter</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="sources-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Views</h2>
+          <div class="actions">
+            <button id="add-view-btn" class="secondary">Add View</button>
+          </div>
+        </div>
+        <p class="panel-note">Camera angles are measured in degrees (°).</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Azimuth</th>
+                <th>Elevation</th>
+                <th>Roll</th>
+                <th>Zoom</th>
+                <th>Parallel</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="views-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Render Defaults</h2>
+        </div>
+        <div class="render-grid" id="render-defaults"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Run Controls</h2>
+          <div class="actions">
+            <button id="run-job-btn">Prepare + Render</button>
+            <button id="refresh-job-btn" class="secondary">Refresh Status</button>
+          </div>
+        </div>
+        <div class="job-status">
+          <div class="status-strip">
+            <span>Status</span>
+            <strong id="job-state">Idle</strong>
+          </div>
+          <div class="status-strip">
+            <span>Last message</span>
+            <strong id="job-error">None</strong>
+          </div>
+        </div>
+        <pre id="job-log" class="log-box"></pre>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Results Gallery</h2>
+        </div>
+        <div id="results-gallery" class="gallery"></div>
+        <div id="mesh-links" class="mesh-links"></div>
+      </section>
+
+      <footer class="site-footer">
+        <strong>MeshRender Studio</strong>
+        <span>Author: Shuijin Li</span>
+        <a href="mailto:shuijinli@outlook.com">shuijinli@outlook.com</a>
+      </footer>
+    </main>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+  </body>
+</html>

@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "meshrender-studio"
+version = "0.1.0"
+description = "Local Flask app for preparing, rendering, and reviewing engineering mesh figures with ParaView."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+authors = [
+  { name = "Shuijin Li", email = "shuijinli@outlook.com" },
+]
+dependencies = [
+  "Flask>=3.0,<4",
+]
+
+[project.scripts]
+meshrender-studio-run = "meshrender_studio.cli_run:main"
+meshrender-studio-prepare = "meshrender_studio.cli_prepare:main"
+
+[tool.setuptools.packages.find]
+include = ["meshrender_studio*"]
+
+[tool.setuptools.package-data]
+meshrender_studio = ["templates/*.html", "static/*.css", "static/*.js"]
