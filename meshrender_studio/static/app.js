@@ -72,18 +72,22 @@ function renderProjectInfo() {
   $("project-name").value = state.project?.project_name || "";
 }
 
-function createInput(value, onChange, { type = "text", placeholder = "" } = {}) {
+function createInput(value, onChange, { type = "text", placeholder = "", step = "" } = {}) {
   const input = document.createElement("input");
   input.type = type;
   input.value = value ?? "";
   input.placeholder = placeholder;
+  if (step !== "") {
+    input.step = step;
+  }
   input.addEventListener("change", (event) => onChange(event.target.value));
   return input;
 }
 
-function createNumberInput(value, onChange) {
+function createNumberInput(value, onChange, { step = "" } = {}) {
   return createInput(value, (nextValue) => onChange(Number(nextValue || 0)), {
     type: "number",
+    step,
   });
 }
 
@@ -292,7 +296,7 @@ function renderViews() {
     zoomCell.appendChild(
       createNumberInput(view.zoom_factor ?? 1, (value) => {
         view.zoom_factor = value;
-      })
+      }, { step: "0.1" })
     );
     row.appendChild(zoomCell);
 
