@@ -5,6 +5,7 @@ from pathlib import Path
 from meshrender_studio.core import build_figure_path
 from meshrender_studio.core import selected_views_for_source
 from meshrender_studio.core import select_sources
+from meshrender_studio.figure_layout import compose_zoom_inset
 from paraview.simple import *
 
 
@@ -79,7 +80,13 @@ def standardize_camera(view, render_options: dict, view_options: dict) -> None:
         camera.Zoom(zoom_factor)
 
 
-def render_one(mesh_path: Path, output_png: Path, render_options: dict, view_options: dict) -> None:
+def render_one(
+    mesh_path: Path,
+    output_png: Path,
+    render_options: dict,
+    view_options: dict,
+    zoom_inset: dict | None = None,
+) -> None:
     if not mesh_path.exists():
         raise FileNotFoundError(
             f"Mesh file not found for rendering: {mesh_path}. "
@@ -106,6 +113,8 @@ def render_one(mesh_path: Path, output_png: Path, render_options: dict, view_opt
             int(render_options["image_height"]),
         ],
     )
+    if zoom_inset and zoom_inset.get("enabled"):
+        compose_zoom_inset(output_png, zoom_inset)
     print(f"[ok] Wrote {output_png}")
 
     Delete(display)
@@ -122,8 +131,12 @@ def render_config(
     for source in select_sources(config, selected_sources):
         mesh_path = source["mesh_path"]
         render_options = source["render"]
+        zoom_inset = source.get("zoom_inset")
         for view_options in selected_views_for_source(config, source, selected_views):
             output_png = build_figure_path(source, view_options["name"])
-            render_one(mesh_path, output_png, render_options, view_options)
+            active_zoom_inset = None
+            if zoom_inset and zoom_inset.get("view") == view_options["name"]:
+                active_zoom_inset = zoom_inset
+            render_one(mesh_path, output_png, render_options, view_options, active_zoom_inset)
             outputs.append(output_png)
     return outputs

@@ -10,6 +10,7 @@ from meshrender_studio.core import PROJECT_DIR
 from meshrender_studio.core import PROJECT_VERSION
 from meshrender_studio.core import infer_source_kind
 from meshrender_studio.core import make_default_config
+from meshrender_studio.core import make_default_zoom_inset
 from meshrender_studio.core import normalize_batch_config
 
 
@@ -194,6 +195,7 @@ class ProjectStore:
                 "input": self.to_repo_relative(destination),
                 "figure_prefix": destination.stem,
                 "views": ["oblique"],
+                "zoom_inset": make_default_zoom_inset("oblique"),
                 "part_name": "",
                 "part_index": 0,
                 "structure_filter": "",

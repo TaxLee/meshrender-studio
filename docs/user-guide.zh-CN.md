@@ -84,6 +84,20 @@ python3 -m meshrender_studio.app
 
 如果需要新增视角，点击 `Add View`，再在 `Sources` 表中引用该视角名称即可。
 
+## 局部放大图
+
+如果希望输出类似“整图 + 局部框选 + 放大局部”的图片，可使用 `Zoom Insets` 面板。
+
+每个 inset 都是按数据源单独配置的：
+
+- `Enable inset` 用于启用或关闭局部放大图。
+- `Target view` 选择哪个渲染视角应用该放大布局。
+- `Crop box` 使用归一化坐标 `x, y, width, height`，取值范围为 `0..1`。
+- `Inset box` 使用相同的归一化坐标格式，用于定义放大图的位置和尺寸。
+- `Outline color` 与 `Outline width` 控制框线、放大图边框以及连接线的样式。
+
+坐标原点位于最终渲染图像的左上角。
+
 ## 渲染默认参数
 
 `Render Defaults` 区域用于控制共享渲染风格：

@@ -11,6 +11,14 @@ const ANGLE_LIMITS = {
   max: 180,
   step: 1,
 };
+const DEFAULT_ZOOM_INSET = {
+  enabled: false,
+  view: "",
+  crop_box: [0.05, 0.54, 0.22, 0.26],
+  inset_box: [0.37, 0.08, 0.35, 0.35],
+  stroke_color: [0.95, 0.43, 0.16],
+  stroke_width: 4,
+};
 
 function $(id) {
   return document.getElementById(id);
@@ -65,6 +73,61 @@ function parseVector(text) {
     throw new Error(`Expected three comma-separated numbers, got: ${text}`);
   }
   return values;
+}
+
+function parseNormalizedRect(text) {
+  const values = csvToArray(text).map(Number);
+  if (values.length !== 4 || values.some((value) => Number.isNaN(value))) {
+    throw new Error(`Expected four comma-separated numbers, got: ${text}`);
+  }
+  const [x, y, width, height] = values;
+  if (width <= 0 || height <= 0) {
+    throw new Error(`Expected positive width and height, got: ${text}`);
+  }
+  if (x < 0 || y < 0 || x + width > 1 || y + height > 1) {
+    throw new Error(`Expected values inside 0..1 bounds, got: ${text}`);
+  }
+  return values;
+}
+
+function applyInsetValue(handler) {
+  return (value) => {
+    try {
+      handler(value);
+      clearError();
+    } catch (error) {
+      showError(error.message);
+    }
+  };
+}
+
+function availableSourceViews(source) {
+  const configuredViews = state.project.views.map((view) => view.name).filter(Boolean);
+  const selectedViews = (source.views || []).filter((viewName) => configuredViews.includes(viewName));
+  return selectedViews.length ? selectedViews : configuredViews;
+}
+
+function ensureZoomInset(source) {
+  const availableViews = availableSourceViews(source);
+  const fallbackView = availableViews[0] || "";
+  if (!source.zoom_inset) {
+    source.zoom_inset = clone(DEFAULT_ZOOM_INSET);
+  }
+  source.zoom_inset.enabled = Boolean(source.zoom_inset.enabled);
+  source.zoom_inset.view = availableViews.includes(source.zoom_inset.view)
+    ? source.zoom_inset.view
+    : fallbackView;
+  source.zoom_inset.crop_box = Array.isArray(source.zoom_inset.crop_box)
+    ? source.zoom_inset.crop_box.map(Number)
+    : clone(DEFAULT_ZOOM_INSET.crop_box);
+  source.zoom_inset.inset_box = Array.isArray(source.zoom_inset.inset_box)
+    ? source.zoom_inset.inset_box.map(Number)
+    : clone(DEFAULT_ZOOM_INSET.inset_box);
+  source.zoom_inset.stroke_color = Array.isArray(source.zoom_inset.stroke_color)
+    ? source.zoom_inset.stroke_color.map(Number)
+    : clone(DEFAULT_ZOOM_INSET.stroke_color);
+  source.zoom_inset.stroke_width = Number(source.zoom_inset.stroke_width ?? DEFAULT_ZOOM_INSET.stroke_width);
+  return source.zoom_inset;
 }
 
 function renderProjectInfo() {
@@ -326,6 +389,111 @@ function renderViews() {
   });
 }
 
+function renderInsets() {
+  const container = $("inset-configs");
+  container.innerHTML = "";
+
+  if (!state.project.sources.length) {
+    container.innerHTML = '<p class="empty-state">Add a source before defining a zoom inset.</p>';
+    return;
+  }
+
+  state.project.sources.forEach((source) => {
+    const inset = ensureZoomInset(source);
+    const availableViews = availableSourceViews(source);
+
+    const card = document.createElement("article");
+    card.className = "inset-card";
+
+    const title = document.createElement("h3");
+    title.textContent = source.name || source.figure_prefix || "Unnamed source";
+    card.appendChild(title);
+
+    const note = document.createElement("p");
+    note.className = "inset-note";
+    note.textContent = availableViews.length
+      ? `Applied only to the ${availableViews.join(", ")} render view${availableViews.length > 1 ? "s" : ""}.`
+      : "This source does not currently reference any valid view.";
+    card.appendChild(note);
+
+    const grid = document.createElement("div");
+    grid.className = "inset-grid";
+
+    const enabledField = document.createElement("label");
+    const enabledTitle = document.createElement("span");
+    enabledTitle.textContent = "Enable inset";
+    enabledField.appendChild(enabledTitle);
+    enabledField.appendChild(
+      createCheckbox(inset.enabled, (checked) => {
+        inset.enabled = checked;
+      })
+    );
+    grid.appendChild(enabledField);
+
+    const viewField = document.createElement("label");
+    const viewTitle = document.createElement("span");
+    viewTitle.textContent = "Target view";
+    viewField.appendChild(viewTitle);
+    viewField.appendChild(
+      createSelect(availableViews.length ? availableViews : [""], inset.view, (value) => {
+        inset.view = value;
+      })
+    );
+    grid.appendChild(viewField);
+
+    const cropField = document.createElement("label");
+    const cropTitle = document.createElement("span");
+    cropTitle.textContent = "Crop box";
+    cropField.appendChild(cropTitle);
+    cropField.appendChild(
+      createInput(arrayToCsv(inset.crop_box), applyInsetValue((value) => {
+        inset.crop_box = parseNormalizedRect(value);
+      }), { placeholder: "0.05, 0.54, 0.22, 0.26" })
+    );
+    grid.appendChild(cropField);
+
+    const insetField = document.createElement("label");
+    const insetTitle = document.createElement("span");
+    insetTitle.textContent = "Inset box";
+    insetField.appendChild(insetTitle);
+    insetField.appendChild(
+      createInput(arrayToCsv(inset.inset_box), applyInsetValue((value) => {
+        inset.inset_box = parseNormalizedRect(value);
+      }), { placeholder: "0.37, 0.08, 0.35, 0.35" })
+    );
+    grid.appendChild(insetField);
+
+    const colorField = document.createElement("label");
+    const colorTitle = document.createElement("span");
+    colorTitle.textContent = "Outline color";
+    colorField.appendChild(colorTitle);
+    colorField.appendChild(
+      createInput(arrayToCsv(inset.stroke_color), applyInsetValue((value) => {
+        inset.stroke_color = parseVector(value);
+      }), { placeholder: "0.95, 0.43, 0.16" })
+    );
+    grid.appendChild(colorField);
+
+    const widthField = document.createElement("label");
+    const widthTitle = document.createElement("span");
+    widthTitle.textContent = "Outline width";
+    widthField.appendChild(widthTitle);
+    widthField.appendChild(
+      createNumberInput(inset.stroke_width, applyInsetValue((value) => {
+        const width = Number(value || 0);
+        if (width <= 0) {
+          throw new Error("Outline width must be positive.");
+        }
+        inset.stroke_width = width;
+      }), { step: "0.5" })
+    );
+    grid.appendChild(widthField);
+
+    card.appendChild(grid);
+    container.appendChild(card);
+  });
+}
+
 function renderRenderDefaults() {
   const container = $("render-defaults");
   container.innerHTML = "";
@@ -440,6 +608,7 @@ function renderAll() {
   renderProjectInfo();
   renderSources();
   renderViews();
+  renderInsets();
   renderRenderDefaults();
   renderJob();
 }
@@ -529,6 +698,10 @@ function addManualSource() {
     input: "",
     figure_prefix: "new_source",
     views: state.project.views.length ? [state.project.views[0].name] : [],
+    zoom_inset: clone({
+      ...DEFAULT_ZOOM_INSET,
+      view: state.project.views[0]?.name || "",
+    }),
     part_name: "",
     part_index: 0,
     structure_filter: "",

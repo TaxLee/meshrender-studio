@@ -49,6 +49,7 @@ class AppTests(unittest.TestCase):
             content_type="multipart/form-data",
         ).get_json()
         source = import_response["files"][0]["source"]
+        source["zoom_inset"]["enabled"] = True
         project["sources"] = [source]
 
         save_response = self.client.post(
@@ -67,6 +68,7 @@ class AppTests(unittest.TestCase):
         self.assertIsInstance(loaded_project["views"][0]["elevation"], (int, float))
         self.assertIsInstance(loaded_project["views"][0]["roll"], (int, float))
         self.assertEqual(loaded_project["views"][0]["azimuth"], 45)
+        self.assertTrue(loaded_project["sources"][0]["zoom_inset"]["enabled"])
 
         def fake_run_command(job_id: str, command: list[str]) -> None:
             self.manager._append_log(job_id, f"mock {' '.join(command)}")

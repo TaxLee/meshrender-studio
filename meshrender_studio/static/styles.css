@@ -165,6 +165,10 @@ label span {
   font-size: 0.85rem;
 }
 
+code {
+  font: 0.92em/1.2 "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+}
+
 input,
 select {
   width: 100%;
@@ -219,6 +223,35 @@ td button {
   gap: 0.55rem;
   align-items: center;
   min-width: 240px;
+}
+
+.inset-list {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.inset-card {
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.inset-card h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.inset-note {
+  margin: 0 0 0.8rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.inset-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
 }
 
 .angle-slider {
@@ -337,6 +370,7 @@ td button {
   .hero,
   .project-grid,
   .render-grid,
+  .inset-grid,
   .job-status {
     grid-template-columns: 1fr;
   }

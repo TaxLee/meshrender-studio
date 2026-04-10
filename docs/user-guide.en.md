@@ -84,6 +84,24 @@ The `Views` table defines camera presets reused by one or more sources.
 
 If you need a new preset, click `Add View` and then assign that view name from the `Sources` table.
 
+## Zoom Insets
+
+Use the `Zoom Insets` panel when you want one output image to contain:
+
+- the full rendered mesh
+- a highlighted crop region on that mesh
+- an enlarged inset of the same region
+
+Each inset is configured per source.
+
+- `Enable inset` turns the layout on or off.
+- `Target view` selects which rendered view receives the inset composition.
+- `Crop box` uses normalized `x, y, width, height` coordinates in the range `0..1`.
+- `Inset box` uses the same normalized coordinate format to place the enlarged crop.
+- `Outline color` and `Outline width` control the callout box, inset frame, and connector line.
+
+Coordinates are measured from the top-left corner of the final rendered image.
+
 ## Render Defaults
 
 The `Render Defaults` section controls shared output style:

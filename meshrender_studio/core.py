@@ -54,6 +54,9 @@ ABAQUS_QUAD_TYPES = {
 }
 AQWA_QUAD_TYPES = {"QPPL", "MQPL"}
 AQWA_TRI_TYPES = {"TPPL", "MTPL"}
+DEFAULT_ZOOM_INSET_STROKE_COLOR = [0.95, 0.43, 0.16]
+DEFAULT_ZOOM_INSET_CROP_BOX = [0.05, 0.54, 0.22, 0.26]
+DEFAULT_ZOOM_INSET_INSET_BOX = [0.37, 0.08, 0.35, 0.35]
 
 
 @dataclass
@@ -100,6 +103,17 @@ def make_default_config() -> dict:
                 "figure_prefix": "aqwa_clean",
             },
         ],
+    }
+
+
+def make_default_zoom_inset(view_name: str | None = None) -> dict:
+    return {
+        "enabled": False,
+        "view": view_name or "",
+        "crop_box": copy.deepcopy(DEFAULT_ZOOM_INSET_CROP_BOX),
+        "inset_box": copy.deepcopy(DEFAULT_ZOOM_INSET_INSET_BOX),
+        "stroke_color": copy.deepcopy(DEFAULT_ZOOM_INSET_STROKE_COLOR),
+        "stroke_width": 4.0,
     }
 
 
@@ -259,6 +273,77 @@ def normalize_view(view: dict, index: int) -> dict:
     return normalized
 
 
+def normalize_unit_rect(value: object, label: str, source_name: str) -> list[float]:
+    if not isinstance(value, (list, tuple)) or len(value) != 4:
+        raise ValueError(
+            f"Source {source_name} must define {label} as four normalized numbers "
+            "(x, y, width, height)"
+        )
+
+    rect = [float(item) for item in value]
+    x, y, width, height = rect
+    if width <= 0 or height <= 0:
+        raise ValueError(f"Source {source_name} must define positive width and height for {label}")
+    if x < 0 or y < 0 or x + width > 1 or y + height > 1:
+        raise ValueError(
+            f"Source {source_name} must keep {label} inside the rendered image bounds"
+        )
+    return rect
+
+
+def normalize_rgb_triplet(value: object, label: str, source_name: str) -> list[float]:
+    if not isinstance(value, (list, tuple)) or len(value) != 3:
+        raise ValueError(
+            f"Source {source_name} must define {label} as three normalized RGB values"
+        )
+    color = [float(item) for item in value]
+    if any(channel < 0 or channel > 1 for channel in color):
+        raise ValueError(
+            f"Source {source_name} must keep {label} values between 0 and 1"
+        )
+    return color
+
+
+def normalize_zoom_inset(
+    value: object,
+    source_name: str,
+    view_names: list[str],
+) -> dict:
+    default_view_name = view_names[0] if view_names else ""
+    if value is None:
+        return make_default_zoom_inset(default_view_name)
+    if not isinstance(value, dict):
+        raise ValueError(f"Source {source_name} must define zoom_inset as an object")
+
+    merged = deep_merge(make_default_zoom_inset(default_view_name), value)
+    target_view = merged.get("view") or default_view_name
+    if target_view not in view_names:
+        raise ValueError(
+            f"Source {source_name} zoom_inset view must be one of: {', '.join(view_names)}"
+        )
+
+    stroke_width = float(merged.get("stroke_width", 4.0))
+    if stroke_width <= 0:
+        raise ValueError(f"Source {source_name} must define a positive zoom_inset stroke_width")
+
+    return {
+        "enabled": bool(merged.get("enabled", False)),
+        "view": target_view,
+        "crop_box": normalize_unit_rect(merged.get("crop_box"), "zoom_inset crop_box", source_name),
+        "inset_box": normalize_unit_rect(
+            merged.get("inset_box"),
+            "zoom_inset inset_box",
+            source_name,
+        ),
+        "stroke_color": normalize_rgb_triplet(
+            merged.get("stroke_color"),
+            "zoom_inset stroke_color",
+            source_name,
+        ),
+        "stroke_width": stroke_width,
+    }
+
+
 def normalize_source(source: dict, config: dict, index: int, base_dir: Path) -> dict:
     if "input" not in source:
         raise ValueError(f"Source #{index + 1} is missing required key 'input'")
@@ -309,6 +394,7 @@ def normalize_source(source: dict, config: dict, index: int, base_dir: Path) -> 
         "part_name": source.get("part_name") or None,
         "part_index": int(source.get("part_index", 0)),
         "structure_filter": source.get("structure_filter") or None,
+        "zoom_inset": normalize_zoom_inset(source.get("zoom_inset"), name, view_names),
     }
     return normalized
 
